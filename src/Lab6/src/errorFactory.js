@@ -14,10 +14,6 @@ const errorFactory = {
     return formError('Missing fields', BAD_REQUEST);
   },
 
-  missingId: () => {
-    return formError('Missing id', BAD_REQUEST);
-  },
-
   notFound: () => {
     return formError('Resource not found', NOT_FOUND);
   },
@@ -36,7 +32,7 @@ const errorFactory = {
 
   deleteError: (details = null) => {
     return formError('Delete error', INTERNAL_SERVER_ERROR, details);
-  },
+  }
 };
 
 export default errorFactory;
