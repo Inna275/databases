@@ -182,13 +182,13 @@ export default router;
 ```javascript
 import pool from './connection.js';
 import QUERIES from './queries.js';
+import HTTP_STATUS_CODES from './statusCodes.js';
 import sendResponse from './sendResponse.js';
 import errorFactory from './errorFactory.js';
-import HTTP_STATUS_CODES from './statusCodes.js';
 
 const { CREATE, GET_ALL, GET_BY_ID, UPDATE, DELETE } = QUERIES;
 
-const { OK, CREATED} = HTTP_STATUS_CODES;
+const { OK, CREATED } = HTTP_STATUS_CODES;
 
 const createProject = async (req, res, next) => {
   const { name, description, user_id } = req.body;
@@ -207,7 +207,6 @@ const createProject = async (req, res, next) => {
   }
 };
 
-
 const getProjects = async (req, res, next) => {
   try {
     const [results] = await pool.execute(GET_ALL);
@@ -219,10 +218,6 @@ const getProjects = async (req, res, next) => {
 
 const getProjectById = async (req, res, next) => {
   const { id } = req.params;
-
-  if (!id) {
-    return next(errorFactory.missingId());
-  }
 
   try {
     const [results] = await pool.execute(GET_BY_ID, [id]);
@@ -241,7 +236,7 @@ const updateProject = async (req, res, next) => {
   const { id } = req.params;
   const { name, description, user_id } = req.body;
 
-  if (!id || !name || !description || !user_id) {
+  if (!name || !description || !user_id) {
     return next(errorFactory.missingFields());
   }
 
@@ -262,10 +257,6 @@ const updateProject = async (req, res, next) => {
 
 const deleteProject = async (req, res, next) => {
   const { id } = req.params;
-
-  if (!id) {
-    return next(errorFactory.missingId()); 
-  }
 
   try {
     const [result] = await pool.execute(DELETE, [id]);
@@ -344,10 +335,6 @@ const errorFactory = {
     return formError('Missing fields', BAD_REQUEST);
   },
 
-  missingId: () => {
-    return formError('Missing id', BAD_REQUEST);
-  },
-
   notFound: () => {
     return formError('Resource not found', NOT_FOUND);
   },
@@ -366,7 +353,7 @@ const errorFactory = {
 
   deleteError: (details = null) => {
     return formError('Delete error', INTERNAL_SERVER_ERROR, details);
-  }
+  },
 };
 
 export default errorFactory;
