@@ -8,3 +8,5 @@ docs/.vuepress/dist/
 book/
 .mdbook-plantuml-cache/
 docs/mdbook-plantuml-img/
+package-lock.json
+.env
