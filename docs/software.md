@@ -115,3 +115,285 @@ VALUES
 ```
 
 ## RESTfull сервіс для управління даними
+
+### Підключення до бази даних
+```javascript
+import mysql from 'mysql2/promise';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const pool = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+});
+
+export default pool;
+```
+
+### Налаштування сервера
+```javascript
+import express from 'express';
+import router from './router.js';
+import errorHandlingMiddleware from './errorMiddleware.js';
+
+const PORT = 3000;
+
+const app = express();
+
+app.use(express.json());
+
+app.use('/projects', router);
+
+app.use(errorHandlingMiddleware);
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+```
+
+### Роутинг
+```javascript
+import express from 'express';
+import { getProjects, 
+         getProjectById, 
+         createProject, 
+         updateProject, 
+         deleteProject } from './controller.js';
+
+const router = express.Router();
+
+router.post('/', createProject);
+
+router.get('/', getProjects);
+
+router.get('/:id', getProjectById);
+
+router.put('/:id', updateProject);
+
+router.delete('/:id', deleteProject);
+
+export default router;
+```
+
+### Логіка для CRUD операцій
+```javascript
+import pool from './connection.js';
+import QUERIES from './queries.js';
+import sendResponse from './sendResponse.js';
+import errorFactory from './errorFactory.js';
+import HTTP_STATUS_CODES from './statusCodes.js';
+
+const { CREATE, GET_ALL, GET_BY_ID, UPDATE, DELETE } = QUERIES;
+
+const { OK, CREATED} = HTTP_STATUS_CODES;
+
+const createProject = async (req, res, next) => {
+  const { name, description, user_id } = req.body;
+
+  if (!name || !description || !user_id) {
+    return next(errorFactory.missingFields());
+  }
+
+  const values = [name, description, user_id];
+
+  try {
+    await pool.execute(CREATE, values);
+    sendResponse(res, CREATED);
+  } catch (err) {
+    next(errorFactory.createError(err.message));
+  }
+};
+
+
+const getProjects = async (req, res, next) => {
+  try {
+    const [results] = await pool.execute(GET_ALL);
+    sendResponse(res, OK, results);
+  } catch (err) {
+    next(errorFactory.getError(err.message));
+  }
+};
+
+const getProjectById = async (req, res, next) => {
+  const { id } = req.params;
+
+  if (!id) {
+    return next(errorFactory.missingId());
+  }
+
+  try {
+    const [results] = await pool.execute(GET_BY_ID, [id]);
+
+    if (results.length === 0) {
+      return next(errorFactory.notFound());
+    }
+
+    sendResponse(res, OK, results[0]);
+  } catch (err) {
+    next(errorFactory.getError(err.message));
+  }
+};
+
+const updateProject = async (req, res, next) => {
+  const { id } = req.params;
+  const { name, description, user_id } = req.body;
+
+  if (!id || !name || !description || !user_id) {
+    return next(errorFactory.missingFields());
+  }
+
+  const values = [name, description, user_id, id];
+
+  try {
+    const [result] = await pool.execute(UPDATE, values);
+
+    if (result.affectedRows === 0) {
+      return next(errorFactory.notFound());
+    }
+
+    sendResponse(res, OK);
+  } catch (err) {
+    next(errorFactory.updateError(err.message));
+  }
+};
+
+const deleteProject = async (req, res, next) => {
+  const { id } = req.params;
+
+  if (!id) {
+    return next(errorFactory.missingId()); 
+  }
+
+  try {
+    const [result] = await pool.execute(DELETE, [id]);
+
+    if (result.affectedRows === 0) {
+      return next(errorFactory.notFound());
+    }
+
+    sendResponse(res, OK);
+  } catch (err) {
+    next(errorFactory.deleteError(err.message));
+  }
+};
+
+export { 
+  createProject, 
+  getProjects, 
+  getProjectById, 
+  updateProject, 
+  deleteProject 
+};
+```
+
+### Відправка відповіді
+```javascript
+const sendResponse = (res, statusCode, data = null) => {
+  const response = { message: 'Success' };
+  
+  if (data !== null) {
+    response.data = data;
+  }
+  
+  return res.status(statusCode).json(response);
+};
+
+export default sendResponse;
+```
+
+### Обробка помилок
+```javascript
+import HTTP_STATUS_CODES from './statusCodes.js';
+
+const { INTERNAL_SERVER_ERROR } = HTTP_STATUS_CODES;
+
+const errorHandlingMiddleware = (err, req, res, next) => {
+  const response = {
+    statusCode: err.statusCode || INTERNAL_SERVER_ERROR,
+    error: err.message || 'Internal Server Error',
+  };
+
+  if (err.details) {
+    response.details = err.details;
+  }
+
+  res.status(response.statusCode).json(response);
+};
+
+export default errorHandlingMiddleware;
+```
+
+### Фабрика помилок
+```javascript
+import HTTP_STATUS_CODES from './statusCodes.js';
+
+const { BAD_REQUEST, NOT_FOUND, INTERNAL_SERVER_ERROR } = HTTP_STATUS_CODES;
+
+const formError = (message, statusCode = INTERNAL_SERVER_ERROR, details = null) => {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  error.details = details;
+  return error;
+};
+
+const errorFactory = {
+  missingFields: () => {
+    return formError('Missing fields', BAD_REQUEST);
+  },
+
+  missingId: () => {
+    return formError('Missing id', BAD_REQUEST);
+  },
+
+  notFound: () => {
+    return formError('Resource not found', NOT_FOUND);
+  },
+
+  createError: (details = null) => {
+    return formError('Create error', INTERNAL_SERVER_ERROR, details);
+  },
+
+  getError: (details = null) => {
+    return formError('Get error', INTERNAL_SERVER_ERROR, details);
+  },
+
+  updateError: (details = null) => {
+    return formError('Update error', INTERNAL_SERVER_ERROR, details);
+  },
+
+  deleteError: (details = null) => {
+    return formError('Delete error', INTERNAL_SERVER_ERROR, details);
+  }
+};
+
+export default errorFactory;
+```
+
+### SQL запити
+```javascript
+const QUERIES = {
+  CREATE: 'INSERT INTO project (name, description, user_id) VALUES (?, ?, ?)',
+  GET_ALL: 'SELECT * FROM project',
+  GET_BY_ID: 'SELECT * FROM project WHERE id = ?',
+  UPDATE: 'UPDATE project SET name = ?, description = ?, user_id = ? WHERE id = ?',
+  DELETE: 'DELETE FROM project WHERE id = ?',
+};
+
+export default QUERIES;
+```
+
+### Коди статусів HTTP
+```javascript
+const HTTP_STATUS_CODES = {
+  OK: 200,
+  CREATED: 201,
+  BAD_REQUEST: 400,
+  NOT_FOUND: 404,
+  INTERNAL_SERVER_ERROR: 500,
+};
+
+export default HTTP_STATUS_CODES;
+```
