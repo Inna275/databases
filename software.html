@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html lang="uk" class="light" dir="ltr">
+<html lang="uk" class="light sidebar-visible" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
@@ -7,7 +7,7 @@
 
 
         <!-- Custom HTML head -->
-        
+
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
@@ -30,15 +30,17 @@
 
         <!-- Custom theme stylesheets -->
 
-    </head>
-    <body class="sidebar-visible no-js">
-    <div id="body-container">
+
         <!-- Provide site root to javascript -->
         <script>
             var path_to_root = "";
             var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
         </script>
-
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script>
             try {
@@ -60,19 +62,16 @@
             var theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
-            var html = document.querySelector('html');
+            const html = document.documentElement;
             html.classList.remove('light')
             html.classList.add(theme);
-            var body = document.querySelector('body');
-            body.classList.remove('no-js')
-            body.classList.add('js');
+            html.classList.add("js");
         </script>
 
         <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
 
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
-            var body = document.querySelector('body');
             var sidebar = null;
             var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
@@ -82,45 +81,25 @@
                 sidebar = 'hidden';
             }
             sidebar_toggle.checked = sidebar === 'visible';
-            body.classList.remove('sidebar-visible');
-            body.classList.add("sidebar-" + sidebar);
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="index.html">Титульна сторінка</a></li><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Вступ</a></li><li class="chapter-item expanded "><a href="requirements.html"><strong aria-hidden="true">2.</strong> Розроблення загальних вимог до системи</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="state-of-the-art.html"><strong aria-hidden="true">2.1.</strong> Аналіз предметної області</a></li><li class="chapter-item expanded "><a href="stakeholders-needs.html"><strong aria-hidden="true">2.2.</strong> Запити зацікавлених осіб</a></li></ol></li><li class="chapter-item expanded "><a href="use_cases.html"><strong aria-hidden="true">3.</strong> Розроблення функціональних вимог до системи</a></li><li class="chapter-item expanded "><a href="design.html"><strong aria-hidden="true">4.</strong> Проєктування інформаційного забезпечення</a></li><li class="chapter-item expanded "><a href="software.html" class="active"><strong aria-hidden="true">5.</strong> Реалізація інформаційного та програмного забезпечення</a></li><li class="chapter-item expanded "><a href="test.html"><strong aria-hidden="true">6.</strong> Тестування працездатності системи</a></li><li class="chapter-item expanded "><a href="conclusion.html"><strong aria-hidden="true">7.</strong> Висновки</a></li></ol>
-            </div>
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
             </div>
         </nav>
 
-        <!-- Track and set sidebar scroll position -->
-        <script>
-            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
-            sidebarScrollbox.addEventListener('click', function(e) {
-                if (e.target.tagName === 'A') {
-                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
-                }
-            }, { passive: true });
-            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
-            sessionStorage.removeItem('sidebar-scroll');
-            if (sidebarScrollTop) {
-                // preserve sidebar scroll position when navigating via links within sidebar
-                sidebarScrollbox.scrollTop = sidebarScrollTop;
-            } else {
-                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
-                var activeSection = document.querySelector('#sidebar .active');
-                if (activeSection) {
-                    activeSection.scrollIntoView({ block: 'center' });
-                }
-            }
-        </script>
-
         <div id="page-wrapper" class="page-wrapper">
 
             <div class="page">
-                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar-hover-placeholder"></div>
                 <div id="menu-bar" class="menu-bar sticky">
                     <div class="left-buttons">
                         <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
@@ -286,6 +265,257 @@ VALUES
 
 </code></pre>
 <h2 id="restfull-сервіс-для-управління-даними"><a class="header" href="#restfull-сервіс-для-управління-даними">RESTfull сервіс для управління даними</a></h2>
+<h3 id="Підключення-до-бази-даних"><a class="header" href="#Підключення-до-бази-даних">Підключення до бази даних</a></h3>
+<pre><code class="language-javascript">import mysql from 'mysql2/promise';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const pool = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+});
+
+export default pool;
+</code></pre>
+<h3 id="Налаштування-сервера"><a class="header" href="#Налаштування-сервера">Налаштування сервера</a></h3>
+<pre><code class="language-javascript">import express from 'express';
+import router from './router.js';
+import errorHandlingMiddleware from './errorMiddleware.js';
+
+const PORT = 3000;
+
+const app = express();
+
+app.use(express.json());
+
+app.use('/projects', router);
+
+app.use(errorHandlingMiddleware);
+
+app.listen(PORT, () =&gt; {
+  console.log(`Server is running on port ${PORT}`);
+});
+</code></pre>
+<h3 id="Роутинг"><a class="header" href="#Роутинг">Роутинг</a></h3>
+<pre><code class="language-javascript">import express from 'express';
+import { getProjects, 
+         getProjectById, 
+         createProject, 
+         updateProject, 
+         deleteProject } from './controller.js';
+
+const router = express.Router();
+
+router.post('/', createProject);
+
+router.get('/', getProjects);
+
+router.get('/:id', getProjectById);
+
+router.put('/:id', updateProject);
+
+router.delete('/:id', deleteProject);
+
+export default router;
+</code></pre>
+<h3 id="Логіка-для-crud-операцій"><a class="header" href="#Логіка-для-crud-операцій">Логіка для CRUD операцій</a></h3>
+<pre><code class="language-javascript">import pool from './connection.js';
+import QUERIES from './queries.js';
+import HTTP_STATUS_CODES from './statusCodes.js';
+import sendResponse from './sendResponse.js';
+import errorFactory from './errorFactory.js';
+
+const { CREATE, GET_ALL, GET_BY_ID, UPDATE, DELETE } = QUERIES;
+
+const { OK, CREATED } = HTTP_STATUS_CODES;
+
+const createProject = async (req, res, next) =&gt; {
+  const { name, description, user_id } = req.body;
+
+  if (!name || !description || !user_id) {
+    return next(errorFactory.missingFields());
+  }
+
+  const values = [name, description, user_id];
+
+  try {
+    await pool.execute(CREATE, values);
+    sendResponse(res, CREATED);
+  } catch (err) {
+    next(errorFactory.createError(err.message));
+  }
+};
+
+const getProjects = async (req, res, next) =&gt; {
+  try {
+    const [results] = await pool.execute(GET_ALL);
+    sendResponse(res, OK, results);
+  } catch (err) {
+    next(errorFactory.getError(err.message));
+  }
+};
+
+const getProjectById = async (req, res, next) =&gt; {
+  const { id } = req.params;
+
+  try {
+    const [results] = await pool.execute(GET_BY_ID, [id]);
+
+    if (results.length === 0) {
+      return next(errorFactory.notFound());
+    }
+
+    sendResponse(res, OK, results[0]);
+  } catch (err) {
+    next(errorFactory.getError(err.message));
+  }
+};
+
+const updateProject = async (req, res, next) =&gt; {
+  const { id } = req.params;
+  const { name, description, user_id } = req.body;
+
+  if (!name || !description || !user_id) {
+    return next(errorFactory.missingFields());
+  }
+
+  const values = [name, description, user_id, id];
+
+  try {
+    const [result] = await pool.execute(UPDATE, values);
+
+    if (result.affectedRows === 0) {
+      return next(errorFactory.notFound());
+    }
+
+    sendResponse(res, OK);
+  } catch (err) {
+    next(errorFactory.updateError(err.message));
+  }
+};
+
+const deleteProject = async (req, res, next) =&gt; {
+  const { id } = req.params;
+
+  try {
+    const [result] = await pool.execute(DELETE, [id]);
+
+    if (result.affectedRows === 0) {
+      return next(errorFactory.notFound());
+    }
+
+    sendResponse(res, OK);
+  } catch (err) {
+    next(errorFactory.deleteError(err.message));
+  }
+};
+
+export { 
+  createProject, 
+  getProjects, 
+  getProjectById, 
+  updateProject, 
+  deleteProject 
+};
+</code></pre>
+<h3 id="Відправка-відповіді"><a class="header" href="#Відправка-відповіді">Відправка відповіді</a></h3>
+<pre><code class="language-javascript">const sendResponse = (res, statusCode, data = null) =&gt; {
+  const response = { message: 'Success' };
+  
+  if (data !== null) {
+    response.data = data;
+  }
+  
+  return res.status(statusCode).json(response);
+};
+
+export default sendResponse;
+</code></pre>
+<h3 id="Обробка-помилок"><a class="header" href="#Обробка-помилок">Обробка помилок</a></h3>
+<pre><code class="language-javascript">import HTTP_STATUS_CODES from './statusCodes.js';
+
+const { INTERNAL_SERVER_ERROR } = HTTP_STATUS_CODES;
+
+const errorHandlingMiddleware = (err, req, res, next) =&gt; {
+  const response = {
+    statusCode: err.statusCode || INTERNAL_SERVER_ERROR,
+    error: err.message || 'Internal Server Error',
+  };
+
+  if (err.details) {
+    response.details = err.details;
+  }
+
+  res.status(response.statusCode).json(response);
+};
+
+export default errorHandlingMiddleware;
+</code></pre>
+<h3 id="Фабрика-помилок"><a class="header" href="#Фабрика-помилок">Фабрика помилок</a></h3>
+<pre><code class="language-javascript">import HTTP_STATUS_CODES from './statusCodes.js';
+
+const { BAD_REQUEST, NOT_FOUND, INTERNAL_SERVER_ERROR } = HTTP_STATUS_CODES;
+
+const formError = (message, statusCode = INTERNAL_SERVER_ERROR, details = null) =&gt; {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  error.details = details;
+  return error;
+};
+
+const errorFactory = {
+  missingFields: () =&gt; {
+    return formError('Missing fields', BAD_REQUEST);
+  },
+
+  notFound: () =&gt; {
+    return formError('Resource not found', NOT_FOUND);
+  },
+
+  createError: (details = null) =&gt; {
+    return formError('Create error', INTERNAL_SERVER_ERROR, details);
+  },
+
+  getError: (details = null) =&gt; {
+    return formError('Get error', INTERNAL_SERVER_ERROR, details);
+  },
+
+  updateError: (details = null) =&gt; {
+    return formError('Update error', INTERNAL_SERVER_ERROR, details);
+  },
+
+  deleteError: (details = null) =&gt; {
+    return formError('Delete error', INTERNAL_SERVER_ERROR, details);
+  },
+};
+
+export default errorFactory;
+</code></pre>
+<h3 id="sql-запити"><a class="header" href="#sql-запити">SQL запити</a></h3>
+<pre><code class="language-javascript">const QUERIES = {
+  CREATE: 'INSERT INTO project (name, description, user_id) VALUES (?, ?, ?)',
+  GET_ALL: 'SELECT * FROM project',
+  GET_BY_ID: 'SELECT * FROM project WHERE id = ?',
+  UPDATE: 'UPDATE project SET name = ?, description = ?, user_id = ? WHERE id = ?',
+  DELETE: 'DELETE FROM project WHERE id = ?',
+};
+
+export default QUERIES;
+</code></pre>
+<h3 id="Коди-статусів-http"><a class="header" href="#Коди-статусів-http">Коди статусів HTTP</a></h3>
+<pre><code class="language-javascript">const HTTP_STATUS_CODES = {
+  OK: 200,
+  CREATED: 201,
+  BAD_REQUEST: 400,
+  NOT_FOUND: 404,
+  INTERNAL_SERVER_ERROR: 500,
+};
+
+export default HTTP_STATUS_CODES;
+</code></pre>
 
                     </main>
 
