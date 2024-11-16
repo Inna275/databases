@@ -1,8 +1,8 @@
 import pool from './connection.js';
 import QUERIES from './queries.js';
+import HTTP_STATUS_CODES from './statusCodes.js';
 import sendResponse from './sendResponse.js';
 import errorFactory from './errorFactory.js';
-import HTTP_STATUS_CODES from './statusCodes.js';
 
 const { CREATE, GET_ALL, GET_BY_ID, UPDATE, DELETE } = QUERIES;
 
