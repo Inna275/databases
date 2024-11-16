@@ -32,7 +32,7 @@ const errorFactory = {
 
   deleteError: (details = null) => {
     return formError('Delete error', INTERNAL_SERVER_ERROR, details);
-  }
+  },
 };
 
 export default errorFactory;
